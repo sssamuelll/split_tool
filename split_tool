@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+
+import os
+from pydub import AudioSegment
+import argparse
+
+def split_audio(file_path, chunk_duration=30):
+    """
+    Splits an audio file into chunks of a maximum specified duration and saves them as MP3 files in a subfolder.
+
+    :param file_path: Path to the audio file.
+    :param chunk_duration: Maximum duration of each chunk in minutes.
+    """
+    # Maximum chunk duration in milliseconds
+    chunk_duration_ms = chunk_duration * 60 * 1000
+
+    # Load the audio file
+    audio = AudioSegment.from_file(file_path)
+
+    # Create a folder to save the chunks
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    output_folder = f"{base_name}_chunks"
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Split the audio into chunks
+    for i, start_time in enumerate(range(0, len(audio), chunk_duration_ms)):
+        chunk = audio[start_time:start_time + chunk_duration_ms]
+        output_file = os.path.join(output_folder, f"chunk_{i + 1}.mp3")
+        chunk.export(output_file, format="mp3")
+        print(f"Chunk saved: {output_file}")
+
+    print(f"Process completed. Chunks are saved in folder: {output_folder}")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Tool to split an audio file into chunks of a specified maximum duration and save them as MP3 files.",
+        epilog="""
+Examples of usage:
+  Split an audio file into default 30-minute chunks:
+    $ split_tool audio.wav
+
+  Split an audio file into 15-minute chunks:
+    $ split_tool audio.wav --chunk_duration 15
+
+Output:
+  Chunks will be saved in a folder named '<filename>_chunks'.
+
+Dependencies:
+  - Python 3.x
+  - pydub (install with `pip install pydub`)
+  - ffmpeg (ensure it is installed and in your system PATH)
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument("file", help="Path to the audio file")
+    parser.add_argument("--chunk_duration", type=int, default=30, help="Maximum duration of each chunk in minutes (default: 30 minutes)")
+
+    args = parser.parse_args()
+
+    try:
+        split_audio(args.file, args.chunk_duration)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
